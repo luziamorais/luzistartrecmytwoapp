@@ -19,13 +19,28 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Use a versão do wrapper (que já está 8.7)
-      - name: Gradle (use wrapper)
+      # NÃO fixar versão. Usar o wrapper do repo.
+      - name: Gradle (use wrapper, disable cache)
         uses: gradle/gradle-build-action@v3
         with:
           gradle-version: wrapper
+          cache-disabled: true
+          gradle-home-cache-cleanup: true
 
-      - name: Build Debug APK
+      # (Opcional mas MUITO útil) Mostrar qual distributionUrl está no repo
+      - name: Show gradle-wrapper.properties
+        run: |
+          echo "--- gradle/wrapper/gradle-wrapper.properties ---"
+          cat gradle/wrapper/gradle-wrapper.properties || true
+
+      # Garantir que não haja cache antigo e forçar wrapper 8.7
+      - name: Purge Gradle caches
+        run: |
+          rm -rf ~/.gradle/wrapper
+          rm -rf ~/.gradle/caches
+          ./gradlew --no-daemon --version
+
+      - name: Build Debug APK (via wrapper)
         run: ./gradlew --no-daemon clean assembleDebug
 
       - name: Upload APK
