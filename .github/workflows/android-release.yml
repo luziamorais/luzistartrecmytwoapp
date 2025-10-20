@@ -1,40 +1,35 @@
-name: Build CaixaForte (Release signed)
+name: Build Android (Debug)
+
 on:
   workflow_dispatch:
   push:
-    tags: [ "v*" ]
+    branches: [ "main" ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
-      - uses: android-actions/setup-android@v3
-      - name: Install Android platforms and build-tools
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-      - uses: gradle/gradle-build-action@v3
-        with: { gradle-version: 8.10, arguments: "wrapper --gradle-version 8.10" }
-      - name: Prepare keystore from secrets
-        shell: bash
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          mkdir -p keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > keystore/caixaforte.keystore
-          cat > keystore.properties <<EOF
-          storeFile=keystore/caixaforte.keystore
-          storePassword=${KEYSTORE_PASSWORD}
-          keyAlias=${KEY_ALIAS}
-          keyPassword=${KEY_PASSWORD}
-          EOF
-      - run: chmod +x gradlew
-      - uses: gradle/gradle-build-action@v3
-        with: { arguments: ":app:assembleRelease --stacktrace" }
-      - uses: actions/upload-artifact@v4
-        with: { name: caixaforte-release, path: app/build/outputs/apk/release/*.apk }
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Use a versão do wrapper (que já está 8.7)
+      - name: Gradle (use wrapper)
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+
+      - name: Build Debug APK
+        run: ./gradlew --no-daemon clean assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: "**/build/outputs/apk/debug/*.apk"
