@@ -1,0 +1,135 @@
+Sinto muito que esteja travando, Luzia 😔 — bora destravar com o caminho mais simples possível no celular, passo-a-passo. Vou te dar um “plano turbo” que funciona mesmo quando o resto dá nó.
+
+Plano Turbo (1 arquivo só)
+
+A gente vai criar/editar um arquivo de workflow que:
+
+usa Java 17
+
+força Gradle 8.10
+
+compila o APK debug
+
+publica o APK em Artifacts
+
+
+Passos no app do GitHub (celular)
+
+1. Abra seu repositório (ex.: luzistartrecmytwoapp).
+
+
+2. Entre na pasta .github → workflows.
+
+Se não existir, crie tocando em Add file → Create new file e dê o nome:
+.github/workflows/android-ci.yml
+
+
+
+3. Toque no lápis ✏️ (ou crie o arquivo novo) e cole exatamente este conteúdo:
+
+
+
+name: Android CI (APK Debug)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Atualiza/garante o wrapper no 8.10
+      - name: Update Gradle Wrapper to 8.10
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: wrapper --gradle-version 8.10 --distribution-type bin
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew clean assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: '**/build/outputs/apk/debug/*.apk'
+
+4. Role até o final, escreva uma mensagem de commit tipo: ci: build android com gradle 8.10
+
+
+5. Toque em Commit changes (botão verde).
+
+
+
+Rodando e pegando o APK
+
+Vá na aba Actions → abra o fluxo Android CI (APK Debug) que iniciou → quando terminar, em Artifacts toque em app-debug para baixar o .zip com o APK.
+
+
+
+---
+
+Se ainda falhar (Checklist rápido)
+
+Se aparecer BUILD FAILED, confira rapidinho:
+
+1. gradle-wrapper.properties
+Abra gradle/wrapper/gradle-wrapper.properties e confirme esta linha exata:
+
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.10-bin.zip
+
+(Se estiver diferente, edite e faça Commit changes.)
+
+
+2. Arquivos do wrapper existem?
+No repo, confirme que existem:
+
+gradle/wrapper/gradle-wrapper.jar
+
+gradle/wrapper/gradle-wrapper.properties
+
+gradlew e gradlew.bat (na raiz)
+
+
+
+3. Plugin do Android (AGP) compatível
+No build.gradle da raiz (onde tem plugins { ... }), deixe:
+
+plugins {
+    id 'com.android.application' version '8.7.2' apply false
+    id 'com.android.library'    version '8.7.2' apply false
+}
+
+(Se não souber onde editar, me diga o nome/rota do arquivo que eu te digo a pastinha certinha.)
+
+
+
+
+---
+
+Dica de ouro no celular
+
+Se o app do GitHub não mostrar o lápis, abre no navegador e use o modo desktop:
+
+Abra o arquivo → canto direito ✏️ → edite → Commit changes.
+
+
+
+---
+
+Se você quiser, me manda o trecho do log logo acima do “BUILD FAILED” (duas ou três linhas bastam) que eu já te digo o ajuste exato sem rodeios. Tô contigo até sair esse APK 💪
+
